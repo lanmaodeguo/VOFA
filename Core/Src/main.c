@@ -24,6 +24,7 @@
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -43,6 +44,7 @@
 #include "../icode//can/can1.h"
 #include "../icode//bsp/usart_bsp.h"
 #include "../icode/bsp/vofa_bsp.h"
+#include "../../USB_DEVICE/App/usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -138,11 +140,12 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   MX_TIM3_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
   RetargetInit(&huart1);
-  // HAL_CAN_MspInit(&hcan);
+  HAL_CAN_MspDeInit(&hcan);
   // CAN_User_Init(&hcan);
-  // HAL_UART_Receive_IT(&huart1,(uint8_t *)&USART1_NewData,1);
+  HAL_UART_Receive_IT(&huart1,(uint8_t *)&USART1_NewData,1);
   RTC_Init();
   Uart_Init(&huart1, rx_buffer, 8, Serialplot_Call_Back);
   // LED_1(1);
@@ -158,6 +161,7 @@ int main(void)
   float t = 0;
   while (1)
   {
+
     float tmep[256];
     static uint32_t flag;
     if (flag == 2500)
@@ -172,8 +176,8 @@ int main(void)
     tmep[ 1] = led_status;
     HAL_Delay(0);
     flag++;
-    VOFA_Send_Message(&huart1,2,VOFA_FIREWATER,tmep);
-    // VOFA_Send_Message(&huart1,data,2,VOFA_FIREWATER);
+    VOFA_Send_Message_VC(2,VOFA_FIREWATER,tmep);
+
   }
 
     /* USER CODE END WHILE */
@@ -222,9 +226,11 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_ADC;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_ADC
+                              |RCC_PERIPHCLK_USB;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
+  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();

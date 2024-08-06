@@ -5,6 +5,8 @@
 #include "vofa_bsp.h"
 #include <stdarg.h>
 
+#include "usbd_cdc_if.h"
+
 uint8_t VOFA_Send_Message(UART_HandleTypeDef *huart , uint16_t len,VOFA_MODE_TypeDef Mode,...)
 {
 
@@ -42,4 +44,41 @@ uint8_t VOFA_Send_Message(UART_HandleTypeDef *huart , uint16_t len,VOFA_MODE_Typ
             return HAL_OK;
         }
 
+}
+
+uint8_t VOFA_Send_Message_VC (uint16_t len,VOFA_MODE_TypeDef Mode,...)
+{
+    if(Mode == VOFA_FIREWATER)//FiREWATER数据帧模式，尾帧规律
+    {
+        va_list valist;
+        /* 为 num 个参数初始化 valist */
+        va_start(valist,Mode);
+        /* 访问所有赋给 valist 的参数 */
+        float *temp;
+        temp = va_arg(valist, float *);
+        /* 清理为 valist 保留的内存 */
+        va_end(valist);
+        // CDC_Transmit_FS((char*)temp,len*sizeof(float));
+        while (CDC_Transmit_FS((char*)temp,len*sizeof(float)) != USBD_OK){};
+        //查询串口状态是否正确，延时一段时间等待恢复
+        uint8_t data[4] = {0x00, 0x00, 0x80, 0x7f};
+        // CDC_Transmit_FS(data,4);
+        while (CDC_Transmit_FS(data,4) != USBD_OK){};
+        // return HAL_OK;
+    }
+    if (Mode == VOFA_RAWDATA)
+    {
+        // RAWData 无需处理
+        va_list valist;
+        /* 为 num 个参数初始化 valist */
+        va_start(valist,Mode);
+        /* 访问所有赋给 valist 的参数 */
+        uint8_t *temp;
+        temp = va_arg(valist, uint8_t *);
+        /* 清理为 valist 保留的内存 */
+        va_end(valist);
+        // CDC_Transmit_FS(temp,len);
+        while (CDC_Transmit_FS(temp,len) != USBD_OK){};
+        return HAL_OK;
+    }
 }
