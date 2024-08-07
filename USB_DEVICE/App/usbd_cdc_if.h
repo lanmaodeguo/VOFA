@@ -93,8 +93,7 @@
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-extern uint8_t USB_RX_BUF[USB_REC_LEN];
-extern uint16_t USB_RX_STA;
+extern uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**

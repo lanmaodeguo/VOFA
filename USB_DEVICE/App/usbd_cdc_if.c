@@ -22,7 +22,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "../icode/Led/led.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -260,14 +260,25 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  if(*Len < USB_REC_LEN)
+  if(*Len < APP_RX_DATA_SIZE)
   {
     uint16_t i ;
-    USB_RX_STA = *Len;
     for(i = 0; i<*Len ;i++)
     {
-      USB_RX_BUF[i] = Buf[i];
+      UserRxBufferFS[i] = Buf[i];
     }
+  }
+  if (UserRxBufferFS[0] == 0)
+  {
+    LED_2(0);
+  }
+  else if (UserRxBufferFS[0] == 1)
+  {
+    LED_2(1);
+  }
+  else if (UserRxBufferFS[0] == 2)
+  {
+    LED_2_Contrary();
   }
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
@@ -290,32 +301,32 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
-  uint32_t TimeStart = HAL_GetTick();
+  // uint32_t TimeStart = HAL_GetTick();
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
-  // if (hcdc->TxState != 0){
-  //   return USBD_BUSY;
-  // }
-  while (hcdc->TxState)
-  {
-    if(HAL_GetTick()-TimeStart > 10)
-    {
-      return HAL_BUSY;
-    }
-    else
-    {
-      break;
-    }
+  if (hcdc->TxState != 0){
+    return USBD_BUSY;
   }
+  // while (hcdc->TxState)
+  // {
+  //   if(HAL_GetTick()-TimeStart > 10)
+  //   {
+  //     return HAL_BUSY;
+  //   }
+  //   else
+  //   {
+  //     break;
+  //   }
+  // }
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
-  TimeStart = HAL_GetTick();
-  while (hcdc->TxState)
-  {
-    if(HAL_GetTick()-TimeStart > 10)
-    {
-      return HAL_BUSY;
-    }
-  }
+  // TimeStart = HAL_GetTick();
+  // while (hcdc->TxState)
+  // {
+  //   if(HAL_GetTick()-TimeStart > 10)
+  //   {
+  //     return HAL_BUSY;
+  //   }
+  // }
   /* USER CODE END 7 */
   return result;
 }

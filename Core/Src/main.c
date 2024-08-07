@@ -44,6 +44,7 @@
 #include "../icode//can/can1.h"
 #include "../icode//bsp/usart_bsp.h"
 #include "../../USB_DEVICE/App/usbd_cdc_if.h"
+#include "../icode//bsp/vofa_bsp.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,12 +59,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-typedef enum
-{
-  VOFA_RAWDATA = 0x00U,
-  VOFA_JUSTFLOAT = 0x02U,
-  VOFA_FIREWATER = 0x04U,
-}VOFA_MODE_TypeDef;
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -75,42 +71,7 @@ uint8_t rx_buffer[8];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-uint8_t VOFA_Send_Message_VC (uint16_t len,VOFA_MODE_TypeDef Mode,...)
-{
-  if(Mode == VOFA_FIREWATER)//FiREWATER数据帧模式，尾帧规律
-  {
-    va_list valist;
-    /* 为 num 个参数初始化 valist */
-    va_start(valist,Mode);
-    /* 访问所有赋给 valist 的参数 */
-    float *temp;
-    temp = va_arg(valist, float *);
-    /* 清理为 valist 保留的内存 */
-    va_end(valist);
-    // CDC_Transmit_FS((char*)temp,len*sizeof(float));
-    // while (CDC_Transmit_FS((char*)temp,len*sizeof(float)) != USBD_OK){};
-    //查询串口状态是否正确，延时一段时间等待恢复
-    uint8_t data[4] = {0x00, 0x00, 0x80, 0x7f};
-    CDC_Transmit_FS(data,4);
-    // while (CDC_Transmit_FS(data,4) != USBD_OK){};
-    return HAL_OK;
-  }
-  if (Mode == VOFA_RAWDATA)
-  {
-    // RAWData 无需处理
-    va_list valist;
-    /* 为 num 个参数初始化 valist */
-    va_start(valist,Mode);
-    /* 访问所有赋给 valist 的参数 */
-    uint8_t *temp;
-    temp = va_arg(valist, uint8_t *);
-    /* 清理为 valist 保留的内存 */
-    va_end(valist);
-    CDC_Transmit_FS(temp,len);
-    // while (CDC_Transmit_FS(temp,len) != USBD_OK){};
-    return HAL_OK;
-  }
-}
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -123,18 +84,7 @@ uint8_t VOFA_Send_Message_VC (uint16_t len,VOFA_MODE_TypeDef Mode,...)
  */
 void Serialplot_Call_Back(uint8_t *Buffer, uint16_t Length)
 {
-  if (rx_buffer[0] == 0)
-  {
-    LED_2(0);
-  }
-  else if (rx_buffer[0] == 1)
-  {
-    LED_2(1);
-  }
-  else if (rx_buffer[0] == 2)
-  {
-    LED_2_Contrary();
-  }
+
 }
 /* USER CODE END 0 */
 
@@ -158,7 +108,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  MX_USB_DEVICE_Init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -179,10 +129,11 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   MX_TIM3_Init();
+  HAL_CAN_MspDeInit(&hcan);
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
   RetargetInit(&huart1);
-  HAL_CAN_MspDeInit(&hcan);
+
   // CAN_User_Init(&hcan);
   HAL_UART_Receive_IT(&huart1,(uint8_t *)&USART1_NewData,1);
   RTC_Init();
@@ -200,30 +151,31 @@ int main(void)
   float t = 0;
   while (1)
   {
-    if(USB_RX_STA!=0)
-    {
+    // if(USB_RX_STA!=0)
+    // {
       // uint8_t tmp[1];
       // tmp[0] = 1;
-      CDC_Transmit_FS(USB_RX_BUF,USB_RX_STA);
-      USB_RX_STA = 0;
-      memset(USB_RX_BUF,0,sizeof(USB_RX_BUF));
+    // HAL_Delay(100);
+      // CDC_Transmit_FS(USB_RX_BUF,USB_RX_STA);
+      // USB_RX_STA = 0;
+      // memset(USB_RX_BUF,0,sizeof(USB_RX_BUF));
+    // }
+    float tmep[256];
+    static uint32_t flag;
+    if (flag == 2500)
+    {
+      flag = 0;
     }
-    //   float tmep[256];
-    //   static uint32_t flag;
-    //   if (flag == 2500)
-    //   {
-    //     flag = 0;
-    //   }
-    //   float tmp_data;
-    //   tmp_data = ((float)flag / 1000.0f) * ((float)flag / 1000.0f);
-    //   tmep[0] = tmp_data;
-    //   float led_status;
-    //   led_status = HAL_GPIO_ReadPin(LED2_GPIO_Port, LED2_Pin);
-    //   tmep[1] = led_status;
-    //   HAL_Delay(0);
-    //   flag++;
-    //   VOFA_Send_Message_VC(2,VOFA_FIREWATER,tmep);
-    //
+    float tmp_data;
+    tmp_data = ((float)flag / 1000.0f) * ((float)flag / 1000.0f);
+    tmep[0] = tmp_data;
+    float led_status;
+    led_status = HAL_GPIO_ReadPin(LED2_GPIO_Port, LED2_Pin);
+    tmep[1] = led_status;
+    HAL_Delay(0);
+    flag++;
+    VOFA_Send_Message_VC(2,VOFA_FIREWATER,tmep);
+
     // }
 
     /* USER CODE END WHILE */
