@@ -14,5 +14,5 @@ typedef enum
 }VOFA_MODE_TypeDef;
 
 uint8_t VOFA_Send_Message(UART_HandleTypeDef *huart , uint16_t len,VOFA_MODE_TypeDef Mode,...);
-uint8_t VOFA_Send_Message_VC (uint16_t len,VOFA_MODE_TypeDef Mode,...);
+// uint8_t VOFA_Send_Message_VC (uint16_t len,VOFA_MODE_TypeDef Mode,...);
 #endif //VOFA_BSP_H
