@@ -27,3 +27,23 @@ void LED_1_Contrary(void){
 void LED_2_Contrary(void){
     HAL_GPIO_WritePin(GPIOB,LED2_Pin,1-HAL_GPIO_ReadPin(GPIOB,LED2_Pin));
 }
+void LED1_test(void)
+{
+    while (1)
+    {
+        LED_1(1);
+        HAL_Delay(1000);
+        LED_1(0);
+        HAL_Delay(1000);
+    }
+}
+void LED2_test(void)
+{
+    while (1)
+    {
+        LED_2(1);
+        HAL_Delay(1000);
+        LED_2(0);
+        HAL_Delay(1000);
+    }
+}

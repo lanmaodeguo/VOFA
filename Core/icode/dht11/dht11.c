@@ -25,7 +25,7 @@
 
 #include "dht11.h"
 #include "main.h"
-
+#include "../bsp/vofa_bsp.h"
 void DHT11_IO_OUT (void){ //端口变为输出
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 	GPIO_InitStruct.Pin = DHT11_DA_Pin;
@@ -114,6 +114,18 @@ uint8_t DHT11_ReadData(uint8_t *h){ //读取一次数据//湿度值(十进制，范围:20%~90%)
     return 0;
 }
 
+void DHT11_TEST(void)
+{
+	uint8_t data[2] = {0};
+
+	while (1)
+	{
+		while (DHT11_Init() == 0);
+		DHT11_ReadData(data);
+		// VOFA_Send_Message_VC(2,VOFA_RAWDATA,data);
+	}
+
+}
 /*********************************************************************************************
  * 杜洋工作室 www.DoYoung.net
  * 洋桃电子 www.DoYoung.net/YT

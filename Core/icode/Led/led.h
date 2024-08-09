@@ -13,5 +13,6 @@ void LED_2(uint8_t a);//LED2独立控制函数（0为熄灭，其他值为点亮
 void LED_ALL(uint8_t a);//LED1~4整组操作函数（低4位的1/0状态对应4个LED亮灭，最低位对应LED1）
 void LED_1_Contrary(void);//LED1状态取反
 void LED_2_Contrary(void);//LED2状态取反
-
+void LED1_test(void);
+void LED2_test(void);
 #endif //LED_H

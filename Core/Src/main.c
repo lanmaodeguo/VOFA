@@ -18,13 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "adc.h"
-#include "can.h"
+#include "cmsis_os.h"
 #include "dma.h"
-#include "spi.h"
-#include "tim.h"
-#include "usart.h"
-#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -32,19 +27,12 @@
 #include <math.h>
 
 #include "../icode//Led/led.h"
-#include "../icode//Key/key.h"
-#include "../icode//buzzer/buzzer.h"
+
 #include "../icode//delay/delay.h"
-#include "../icode//relay/relay.h"
-#include "../icode//printf/retarget.h"
-#include "../icode//usart/usart.h"
-#include "../icode//adc/adc.h"
+// #include "../icode//printf/retarget.h"
 #include "../icode//rtc/rtc.h"
 #include "../icode//dht11/dht11.h"
-#include "../icode//can/can1.h"
-#include "../icode//bsp/usart_bsp.h"
-#include "../icode/bsp/vofa_bsp.h"
-#include "../../USB_DEVICE/App/usbd_cdc_if.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,6 +58,7 @@ uint8_t rx_buffer[8];
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -107,7 +96,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  u_int16_t a = 0;
+  uint16_t a = 0;
   uint8_t buff[1];
   RTC_DateTypeDef RtcDate;
   RTC_TimeTypeDef RtcTime;
@@ -132,22 +121,13 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_ADC1_Init();
-  MX_ADC2_Init();
-  MX_CAN_Init();
-  MX_SPI2_Init();
-  MX_USART1_UART_Init();
-  MX_USART2_UART_Init();
-  MX_USART3_UART_Init();
-  MX_TIM3_Init();
-  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-  RetargetInit(&huart1);
-  HAL_CAN_MspDeInit(&hcan);
+  // RetargetInit(&huart1);
+  // HAL_CAN_MspDeInit(&hcan);
   // CAN_User_Init(&hcan);
-  HAL_UART_Receive_IT(&huart1,(uint8_t *)&USART1_NewData,1);
+  // HAL_UART_Receive_IT(&huart1,(uint8_t *)&USART1_NewData,1);
   RTC_Init();
-  Uart_Init(&huart1, rx_buffer, 8, Serialplot_Call_Back);
+  // Uart_Init(&huart1, rx_buffer, 8, Serialplot_Call_Back);
   // LED_1(1);
   // HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_3);
   // HAL_ADCEx_Calibration_Start(&hadc1);
@@ -155,6 +135,17 @@ int main(void)
   // HAL_ADC_Start_DMA(&hadc1,(uint32_t *)a1,2);
 
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -176,7 +167,7 @@ int main(void)
     tmep[ 1] = led_status;
     HAL_Delay(0);
     flag++;
-    VOFA_Send_Message_VC(2,VOFA_FIREWATER,tmep);
+    // VOFA_Send_Message_VC(2,VOFA_FIREWATER,tmep);
 
   }
 
@@ -226,11 +217,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_ADC
-                              |RCC_PERIPHCLK_USB;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -240,6 +228,27 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM4 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM4) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
